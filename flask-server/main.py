@@ -8,7 +8,9 @@ CORS(app)
 # Members API Route
 @app.route("/members")
 def members():
+    print("\n====== Hey hows it going======\n", flush=True)
     return jsonify({"members": ["member1", "member2", "member3"]})
+
 
 @app.route("/")
 def home():
