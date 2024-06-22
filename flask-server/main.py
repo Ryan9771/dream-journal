@@ -67,42 +67,35 @@ def home():
     return "Hello world"
 
 
-@app.route("/test", methods=["POST"])
-def test():
-    print("Test route", flush=True)
-    data = request.get_json()
-    return jsonify({"message": "Success"}), 200
-
-
 @app.route("/login", methods=["POST"])
 def login():
-    print("Login route", flush=True)
     data = request.get_json()
-    username = data.username
-    password = data.password
+    username = data["username"]
+    password = data["password"]
 
     # Check the db for said user
     user = User.query.filter_by(username=username).first()
 
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.id)
-        print("Login successful", flush=True)
         return (
             jsonify({"message": "Login successful", "access_token": access_token}),
             200,
         )
 
-    print("Login failed", flush=True)
+    if not user:
+        print("User not found", flush=True)
+
     return jsonify({"message": "Invalid credentials"}), 401
 
 
 @app.route("/signup", methods=["POST"])
 def signup():
-    print("Signup route", flush=True)
     data = request.get_json()
 
     # User already exists
     if User.query.filter_by(username=data["username"]).first():
+        print("User already exists", flush=True)
         return jsonify({"message": "User already exists"}), 400
 
     new_user = User(data["username"], data["password"])
