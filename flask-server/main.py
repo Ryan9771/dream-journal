@@ -64,12 +64,19 @@ class DreamEntry(db.Model):
 
 @app.route("/")
 def home():
-    return "Hello world"
+    return "Flask server works!"
 
 
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
+    """
+    Request Type:
+    {
+        "username": "username",
+        "password": "password"
+    } 
+    """
     username = data["username"]
     password = data["password"]
 
@@ -92,6 +99,13 @@ def login():
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
+    """
+    Request Type:
+    {
+        "username": "username",
+        "password": "password"
+    }
+    """
 
     # User already exists
     if User.query.filter_by(username=data["username"]).first():
@@ -105,6 +119,11 @@ def signup():
     db.session.commit()
 
     return jsonify({"message": "User created successfully"}), 201
+
+
+@app.route("/entry", methods=["POST"])
+def get_entry():
+    pass
 
 
 if __name__ == "__main__":
