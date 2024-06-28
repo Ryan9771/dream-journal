@@ -9,6 +9,7 @@ from flask_jwt_extended import (
 )
 from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
+import datetime
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -42,21 +43,21 @@ class DreamEntry(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    text = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     emotion = db.Column(db.String(150), nullable=False)
 
     def __init__(self, date, content, user_id, emotion):
         self.date = date
-        self.content = content
+        self.text = content
         self.user_id = user_id
         self.emotion = emotion
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "emotion": self.id,
             "date": self.date,
-            "content": self.content,
+            "text": self.text,
             "user_id": self.user_id,
             "emotion": self.emotion,
         }
@@ -121,9 +122,23 @@ def signup():
     return jsonify({"message": "User created successfully"}), 201
 
 
+@jwt_required()
 @app.route("/entry", methods=["POST"])
 def get_entry():
-    pass
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    date_str = data["date"]
+    query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
+
+    if not dream_entry:
+        new_entry = DreamEntry(
+            date=query_date, text="", user_id=user_id, emotion="neutral"
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+
+    return jsonify({"emotion": dream_entry.emotion, "text": dream_entry.text}), 200
 
 
 if __name__ == "__main__":

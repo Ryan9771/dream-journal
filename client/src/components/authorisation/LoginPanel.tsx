@@ -1,8 +1,8 @@
 import getStyle from "../../util/Styles";
 import { SignupButton } from "./Buttons";
 import { useState } from "react";
-import { post } from "../../util/util";
 import { getLogin } from "../../services/Services";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   signupFunc: () => void;
@@ -14,11 +14,16 @@ function LoginPanel({ signupFunc }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const navigate = useNavigate();
+
   /* Logs the user in and should redirect to journal page 
     in Authoristion component as it watches changes in Auth state */
   const login = async () => {
     try {
-      await getLogin(username, password);
+      const loginSuccess = await getLogin(username, password);
+      if (loginSuccess) {
+        navigate("/home");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -73,7 +78,6 @@ const styles = {
     "flex",
     "items-center",
     "focus:outline-none",
-    // "lg:py-2",
   ],
   loginCtn: [
     "flex",

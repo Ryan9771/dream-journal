@@ -6,6 +6,7 @@ import {
   SaveButton,
   DoneButton,
 } from "../components/journal/Buttons";
+import { stringToEmotion } from "../util/Types";
 import { useEffect, useState } from "react";
 import { Emotion, JournalEntry } from "../util/Types";
 import { useNavigate } from "react-router-dom";
@@ -55,24 +56,27 @@ function EntrySummary() {
 
   const navigate = useNavigate();
 
-  /* === Load Data into correct states using firestore === */
   useEffect(() => {
+    console.log("Fetching Access token");
     const token = localStorage.getItem("access_token");
     if (!token) {
       navigate("/login");
     }
 
-    const fetchEntry = async () => {
-      const entryResponse = await getEntryData(entryDate);
-      return entryResponse;
-    };
+    // const fetchEntry = async () => {
+    //   console.log("Getting entry data");
+    //   const entryResponse = await getEntryData(entryDate);
+    //   console.log("Entry data fetched:");
+    //   console.log(entryResponse);
+    //   return entryResponse;
+    // };
 
-    /* Fetches the entry for the day */
-    const entry = fetchEntry();
-    entry.then((entry: JournalEntry) => {
-      setEntryText(entry.text);
-      setEmotion(entry.emotion);
-    });
+    // /* Fetches the entry for the day */
+    // const entry = fetchEntry();
+    // entry.then((entry: JournalEntry) => {
+    //   setEntryText(entry.text);
+    //   setEmotion(entry.emotion);
+    // });
   }, [entryDate]);
 
   return (

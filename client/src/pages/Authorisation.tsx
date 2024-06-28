@@ -5,7 +5,6 @@ import SignupPanel from "../components/authorisation/SignupPanel";
 import { AuthState } from "../util/Types";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-// import { useNavigate } from "react-router-dom";
 
 function Authorisation() {
   /* Manages whether the auth panel is default, login or signup */
@@ -19,10 +18,11 @@ function Authorisation() {
     setAuthState(AuthState.Signup);
   }, []);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
-      const navigate = useNavigate();
       navigate("/home");
     }
   });
