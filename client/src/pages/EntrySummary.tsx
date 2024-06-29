@@ -62,7 +62,6 @@ function EntrySummary() {
     if (!token) {
       navigate("/login");
     }
-
     // const fetchEntry = async () => {
     //   console.log("Getting entry data");
     //   const entryResponse = await getEntryData(entryDate);
@@ -70,7 +69,6 @@ function EntrySummary() {
     //   console.log(entryResponse);
     //   return entryResponse;
     // };
-
     // /* Fetches the entry for the day */
     // const entry = fetchEntry();
     // entry.then((entry: JournalEntry) => {
