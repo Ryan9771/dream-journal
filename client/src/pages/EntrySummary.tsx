@@ -78,6 +78,7 @@ function EntrySummary() {
     fetchEntry().then((entry: JournalEntry) => {
       setEntryText(entry.text);
       setEmotion(entry.emotion);
+      setEntryEditable(false);
     });
   }, [entryDate]);
 
