@@ -70,6 +70,7 @@ def home():
 
 @app.route("/login", methods=["POST"])
 def login():
+    print("=====\nFLASK: Login called\n=====", flush=True)
     data = request.get_json()
     """
     Request Type:
@@ -124,6 +125,7 @@ def signup():
 @app.route("/entry", methods=["POST"])
 @jwt_required()
 def get_entry():
+    print(f"=====\nFLASK: Get entry called\n=====")
     user_id = get_jwt_identity()
     data = request.get_json()
     """
@@ -149,6 +151,7 @@ def get_entry():
 @app.route("/entry/save", methods=["POST"])
 @jwt_required()
 def save_entry():
+    print("FLASK: Save entry called", flush=True)
     user_id = get_jwt_identity()
     data = request.get_json()
     """
@@ -160,14 +163,21 @@ def save_entry():
     } 
     """
     date_str = data["date"]
+    entry_text = data["text"]
+    entry_emotion = data["emotion"]
+
     query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
 
     if not dream_entry:
-        return jsonify({"message": "Entry not found"}), 404
+        new_entry = DreamEntry(
+            date=query_date, text=entry_text, user_id=user_id, emotion=entry_emotion
+        )
+        db.session.add(new_entry)
+    else:
+        dream_entry.text = data["text"]
+        dream_entry.emotion = data["emotion"]
 
-    dream_entry.text = data["text"]
-    dream_entry.emotion = data["emotion"]
     db.session.commit()
 
     return jsonify({"message": "Entry saved successfully"}), 200

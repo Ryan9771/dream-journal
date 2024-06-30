@@ -2,6 +2,10 @@ import { Emotion, JournalEntry } from "../util/Types";
 import { post } from "../util/util";
 import { stringToEmotion } from "../util/Types";
 
+function token() {
+  return localStorage.getItem("access_token") || "";
+}
+
 function getAiResponse(entry: string) {
   const response = "This is a response from the AI";
 
@@ -62,9 +66,7 @@ async function getSignup(username: string, password: string) {
 */
 async function getEntryData(entryDate: Date): Promise<JournalEntry> {
   const dateString = entryDate.toISOString().split("T")[0];
-  const response = await post("/entry", {
-    date: dateString,
-  });
+  const response = await post("/entry", { date: dateString }, token());
 
   const resEntry: JournalEntry = {
     emotion: Emotion.Neutral,
@@ -93,11 +95,15 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
 
 async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
   const dateString = entryDate.toISOString().split("T")[0];
-  const response = await post("/entry/save", {
-    date: dateString,
-    emotion: entry.emotion,
-    text: entry.text,
-  });
+  const response = await post(
+    "/entry/save",
+    {
+      date: dateString,
+      emotion: entry.emotion,
+      text: entry.text,
+    },
+    token()
+  );
 
   if (response.ok) {
     /* 
