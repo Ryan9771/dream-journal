@@ -6,12 +6,6 @@ function token() {
   return localStorage.getItem("access_token") || "";
 }
 
-function getAiResponse(entry: string) {
-  const response = "This is a response from the AI";
-
-  return response;
-}
-
 /* 
  Logs in the user and stores the access token in local storage
  */
@@ -76,7 +70,6 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
   };
 
   if (response.ok) {
-    console.log("Entry data fetched");
     const data = await response.json();
 
     /*
@@ -91,7 +84,7 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
     resEntry.emotion = stringToEmotion(data.emotion);
     resEntry.text = data.text;
   } else {
-    localStorage.removeItem("access_token");
+    console.log("Failed to fetch entry");
   }
 
   return resEntry;
@@ -119,6 +112,36 @@ async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
     console.log("Entry saved");
   } else {
     console.log("Error saving entry");
+  }
+}
+
+async function getAiResponse(entry: JournalEntry) {
+  const text = entry.text;
+  const emotion = emotionToString(entry.emotion);
+
+  const response = await post(
+    "/entry/ai",
+    { text: text, emotion: emotion },
+    token()
+  );
+
+  if (response.ok) {
+    const data = await response.json();
+    /* 
+    Recieved Response format:
+      Success:
+      {
+        analysis: "string"
+      } 
+      Failure:
+      {
+        message: "string"
+      }
+  */
+    return data.analysis;
+  } else {
+    console.log("Failed to get AI response");
+    return "Failed to fetch from endpoint";
   }
 }
 

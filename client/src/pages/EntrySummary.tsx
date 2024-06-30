@@ -6,7 +6,6 @@ import {
   SaveButton,
   DoneButton,
 } from "../components/journal/Buttons";
-import { stringToEmotion } from "../util/Types";
 import { useEffect, useState } from "react";
 import { Emotion, JournalEntry } from "../util/Types";
 import { useNavigate } from "react-router-dom";
@@ -46,20 +45,23 @@ function EntrySummary() {
   );
   const handleAiResponse = (entry: string) => {
     setAnalyseMode(true);
-    const response: string = getAiResponse(entry);
-    setAiResponse(response);
+    getAiResponse({ emotion: emotion, text: entry }).then((response) => {
+      setAiResponse(response);
+    });
   };
 
+  // TODO: Implement some indicator to show that the entry
+  // has been saved
   const handleSave = () => {
     getSaveEntry(entryDate, { emotion: emotion, text: entryText });
     setEntryEditable(false);
-    console.log("Saved");
   };
 
+  // TODO: Implement some indicator to show that the entry
+  // has been saved
   const handleDone = () => {
     getSaveEntry(entryDate, { emotion: emotion, text: entryText });
     setEntryEditable(false);
-    console.log("Doned");
   };
 
   const navigate = useNavigate();
@@ -71,7 +73,6 @@ function EntrySummary() {
     }
     const fetchEntry = async () => {
       const entryResponse = await getEntryData(entryDate);
-      console.log(entryResponse);
       return entryResponse;
     };
     /* Fetches the entry for the day */

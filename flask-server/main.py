@@ -10,6 +10,7 @@ from flask_jwt_extended import (
 from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
 from datetime import datetime
+from util.ai import get_analysis
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -183,6 +184,29 @@ def save_entry():
     db.session.commit()
 
     return jsonify({"message": "Entry saved successfully"}), 200
+
+
+@app.route("/entry/ai", methods=["POST"])
+@jwt_required()
+def get_analysis():
+    """Get analysis for the dream entry."""
+    data = request.get_json()
+    """
+    Recieved Request Type:
+    {
+        "text": "text",
+        "emotion": "emotion"
+    }
+    """
+    text = data["text"]
+    emotion = data["emotion"]
+
+    try:
+        analysis = get_analysis(text, emotion)
+        return jsonify({"analysis": analysis}), 200
+    except Exception as e:
+        print(f"\n===== Error: =====\n{e}\n===== Error =====\n", flush=True)
+        return jsonify({"message": "Error in processing the request"}), 500
 
 
 if __name__ == "__main__":
