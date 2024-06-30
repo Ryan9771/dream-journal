@@ -36,8 +36,9 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
           placement="bottom"
           showArrow={true}
           className={getStyle(styles, "popover")}
+          isOpen={popOverOpen}
         >
-          <PopoverTrigger>
+          <PopoverTrigger onClick={() => setPopOverOpen(true)}>
             <div className={getStyle(styles, "popoverTrigger")}>
               <FaCalendar className={getStyle(styles, "icon")} />
               <div>{date ? format(date, "PPP") : ""}</div>

@@ -122,8 +122,8 @@ def signup():
     return jsonify({"message": "User created successfully"}), 201
 
 
-@jwt_required()
 @app.route("/entry", methods=["POST"])
+@jwt_required()
 def get_entry():
     user_id = get_jwt_identity()
     data = request.get_json()
