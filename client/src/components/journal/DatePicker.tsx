@@ -43,7 +43,7 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
               <div>{date ? format(date, "PPP") : ""}</div>
             </div>
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent className={getStyle(styles, "popoverContent")}>
             <DayPicker
               mode="single"
               selected={date ? date : new Date()}
@@ -92,8 +92,16 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
 const styles = {
   ctn: ["flex", "items-center", "justify-start", "px-5"],
   icon: ["h-4", "w-4", "text-peach"],
-  widthCtrlCtn: ["w-30"],
-  popover: ["bg-white", "p-3", "rounded-md"],
+  popover: ["bg-white", "rounded-md"],
+  popoverContent: [
+    // "bg-gradient-to-b",
+    // "from-white",
+    // "from-1%",
+    // "to-peach",
+    "bg-white",
+    "p-3",
+    "rounded-lg",
+  ],
   popoverTrigger: [
     "flex",
     "items-center",
@@ -111,6 +119,7 @@ const styles = {
     "lg:text-3xl",
     "lg:py-7",
   ],
+  widthCtrlCtn: ["w-30"],
 };
 
 export default DatePicker;
