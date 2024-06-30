@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
+import { FaCalendar } from "react-icons/fa";
 import getStyle from "../../util/Styles";
 import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/react";
 import React from "react";
@@ -32,7 +33,10 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
           className="bg-white p-3 rounded-md"
         >
           <PopoverTrigger>
-            <div>Click me to open</div>
+            <div className="flex items-center text-center text-peach text-xl !border-2 !border-dotted lg:text-3xl lg:py-7 cursor-pointer">
+              <FaCalendar className="h-4 w-4 text-peach" />
+              <div>{date ? format(date, "PPP") : ""}</div>
+            </div>
           </PopoverTrigger>
           <PopoverContent>
             <DayPicker
