@@ -1,7 +1,8 @@
 import getStyle from "../../util/Styles";
 import { LoginButton } from "./Buttons";
 import { useState } from "react";
-import { post } from "../../util/util";
+import { useNavigate } from "react-router-dom";
+import { getSignup } from "../../services/Services";
 
 // TODO: Add or make by regex a validation for email and password
 
@@ -14,22 +15,12 @@ function SignupPanel({ loginFunc }: Props) {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupRePassword, setSignupRePassword] = useState("");
 
-  const signup = async () => {
-    try {
-      const response = await post("/signup", {
-        username: signupEmail,
-        password: signupPassword,
-      });
+  const navigate = useNavigate();
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("access_token", data.access_token);
-        alert("Signed up!");
-      } else {
-        alert("User already exists");
-      }
-    } catch (error) {
-      console.log(error);
+  const signup = async () => {
+    const signupSuccess = await getSignup(signupEmail, signupPassword);
+    if (signupSuccess) {
+      navigate("/home");
     }
   };
 

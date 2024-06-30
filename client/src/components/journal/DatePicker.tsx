@@ -4,13 +4,7 @@ import { DayPicker } from "react-day-picker";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import { FaCalendar } from "react-icons/fa";
 import getStyle from "../../util/Styles";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  popover,
-} from "@nextui-org/react";
-import React from "react";
+import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/react";
 
 interface Props {
   givenDate: Date;

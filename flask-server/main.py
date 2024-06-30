@@ -107,7 +107,6 @@ def signup():
         "password": "password"
     }
     """
-
     # User already exists
     if User.query.filter_by(username=data["username"]).first():
         print("User already exists", flush=True)
@@ -127,6 +126,12 @@ def signup():
 def get_entry():
     user_id = get_jwt_identity()
     data = request.get_json()
+    """
+    Recieved Request Type:
+    {
+        "date": "username",
+    }
+    """
     date_str = data["date"]
     query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
@@ -139,6 +144,33 @@ def get_entry():
         db.session.commit()
 
     return jsonify({"emotion": dream_entry.emotion, "text": dream_entry.text}), 200
+
+
+@app.route("/entry/save", methods=["POST"])
+@jwt_required()
+def save_entry():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    """
+    Recieved Request Type:
+    {
+        "date": "username",
+        "text": "text",
+        "emotion": "emotion"
+    } 
+    """
+    date_str = data["date"]
+    query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
+
+    if not dream_entry:
+        return jsonify({"message": "Entry not found"}), 404
+
+    dream_entry.text = data["text"]
+    dream_entry.emotion = data["emotion"]
+    db.session.commit()
+
+    return jsonify({"message": "Entry saved successfully"}), 200
 
 
 if __name__ == "__main__":

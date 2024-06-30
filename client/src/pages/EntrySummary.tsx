@@ -11,7 +11,11 @@ import { useEffect, useState } from "react";
 import { Emotion, JournalEntry } from "../util/Types";
 import { useNavigate } from "react-router-dom";
 import Ai from "../assets/ai.png";
-import { getAiResponse, getEntryData } from "../services/Services";
+import {
+  getAiResponse,
+  getEntryData,
+  getSaveEntry,
+} from "../services/Services";
 
 function EntrySummary() {
   /* === Entry Text State Management === */
@@ -47,11 +51,15 @@ function EntrySummary() {
   };
 
   const handleSave = () => {
-    setEntryEditable(true);
+    getSaveEntry(entryDate, { emotion: emotion, text: entryText });
+    setEntryEditable(false);
+    console.log("Saved");
   };
 
   const handleDone = () => {
+    getSaveEntry(entryDate, { emotion: emotion, text: entryText });
     setEntryEditable(false);
+    console.log("Doned");
   };
 
   const navigate = useNavigate();

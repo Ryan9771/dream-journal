@@ -8,6 +8,9 @@ function getAiResponse(entry: string) {
   return response;
 }
 
+/* 
+ Logs in the user and stores the access token in local storage
+ */
 async function getLogin(username: string, password: string) {
   const response = await post("/login", {
     username: username,
@@ -16,6 +19,13 @@ async function getLogin(username: string, password: string) {
 
   if (response.ok) {
     const data = await response.json();
+    /*
+    Recieved Response format:
+    {
+      message: "string",
+      access_token: "string"
+    }
+    */
     localStorage.setItem("access_token", data.access_token);
     return true;
   } else {
@@ -24,10 +34,36 @@ async function getLogin(username: string, password: string) {
   }
 }
 
+/* Signs the user up */
+async function getSignup(username: string, password: string) {
+  const response = await post("/signup", {
+    username: username,
+    password: password,
+  });
+
+  const data = await response.json();
+  /*
+    Recieved Response format:
+    {
+      message: "string"
+    }
+    */
+  if (response.ok) {
+    localStorage.setItem("access_token", data.access_token);
+    return true;
+  } else {
+    alert(data.message);
+    return false;
+  }
+}
+
+/* 
+  Fetches the entry data for the given date
+*/
 async function getEntryData(entryDate: Date): Promise<JournalEntry> {
   const dateString = entryDate.toISOString().split("T")[0];
   const response = await post("/entry", {
-    entryDate: dateString,
+    date: dateString,
   });
 
   const resEntry: JournalEntry = {
@@ -39,6 +75,14 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
     console.log("Entry data fetched");
     const data = await response.json();
 
+    /*
+    Received Response format:
+    {
+      emotion: "string",
+      text: "string"
+    }
+    */
+
     // Mapper to map text emotion to enum
     resEntry.emotion = stringToEmotion(data.emotion);
     resEntry.text = data.text;
@@ -46,4 +90,26 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
 
   return resEntry;
 }
-export { getAiResponse, getEntryData, getLogin };
+
+async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
+  const dateString = entryDate.toISOString().split("T")[0];
+  const response = await post("/entry/save", {
+    date: dateString,
+    emotion: entry.emotion,
+    text: entry.text,
+  });
+
+  if (response.ok) {
+    /* 
+    Recieved Response format:
+    {
+      message: "string"
+    }
+    */
+    console.log("Entry saved");
+  } else {
+    console.log("Error saving entry");
+  }
+}
+
+export { getAiResponse, getEntryData, getLogin, getSaveEntry, getSignup };
