@@ -1,6 +1,6 @@
 import { Emotion, JournalEntry } from "../util/Types";
 import { post } from "../util/util";
-import { stringToEmotion } from "../util/Types";
+import { stringToEmotion, emotionToString } from "../util/Types";
 
 function token() {
   return localStorage.getItem("access_token") || "";
@@ -33,6 +33,7 @@ async function getLogin(username: string, password: string) {
     localStorage.setItem("access_token", data.access_token);
     return true;
   } else {
+    localStorage.removeItem("access_token");
     alert("Invalid username or password");
     return false;
   }
@@ -57,6 +58,7 @@ async function getSignup(username: string, password: string) {
     return true;
   } else {
     alert(data.message);
+    localStorage.removeItem("access_token");
     return false;
   }
 }
@@ -88,6 +90,8 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
     // Mapper to map text emotion to enum
     resEntry.emotion = stringToEmotion(data.emotion);
     resEntry.text = data.text;
+  } else {
+    localStorage.removeItem("access_token");
   }
 
   return resEntry;
@@ -99,7 +103,7 @@ async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
     "/entry/save",
     {
       date: dateString,
-      emotion: entry.emotion,
+      emotion: emotionToString(entry.emotion),
       text: entry.text,
     },
     token()

@@ -9,7 +9,7 @@ from flask_jwt_extended import (
 )
 from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
-import datetime
+from datetime import datetime
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -47,9 +47,9 @@ class DreamEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     emotion = db.Column(db.String(150), nullable=False)
 
-    def __init__(self, date, content, user_id, emotion):
+    def __init__(self, date, text, user_id, emotion):
         self.date = date
-        self.text = content
+        self.text = text
         self.user_id = user_id
         self.emotion = emotion
 
@@ -86,6 +86,7 @@ def login():
     user = User.query.filter_by(username=username).first()
 
     if user and bcrypt.check_password_hash(user.password, password):
+        print("\n=====\nUser found\n=====", flush=True)
         access_token = create_access_token(identity=user.id)
         return (
             jsonify({"message": "Login successful", "access_token": access_token}),
@@ -144,6 +145,7 @@ def get_entry():
         )
         db.session.add(new_entry)
         db.session.commit()
+        return jsonify({"emotion": "neutral", "text": ""}), 201
 
     return jsonify({"emotion": dream_entry.emotion, "text": dream_entry.text}), 200
 
