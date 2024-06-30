@@ -4,7 +4,12 @@ import { DayPicker } from "react-day-picker";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import { FaCalendar } from "react-icons/fa";
 import getStyle from "../../util/Styles";
-import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  popover,
+} from "@nextui-org/react";
 import React from "react";
 
 interface Props {
@@ -30,11 +35,11 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
         <Popover
           placement="bottom"
           showArrow={true}
-          className="bg-white p-3 rounded-md"
+          className={getStyle(styles, "popover")}
         >
           <PopoverTrigger>
-            <div className="flex items-center text-center text-peach text-xl !border-2 !border-dotted lg:text-3xl lg:py-7 cursor-pointer">
-              <FaCalendar className="h-4 w-4 text-peach" />
+            <div className={getStyle(styles, "popoverTrigger")}>
+              <FaCalendar className={getStyle(styles, "icon")} />
               <div>{date ? format(date, "PPP") : ""}</div>
             </div>
           </PopoverTrigger>
@@ -86,7 +91,26 @@ function DatePicker({ givenDate, onChangeDate }: Props) {
 
 const styles = {
   ctn: ["flex", "items-center", "justify-start", "px-5"],
+  icon: ["h-4", "w-4", "text-peach"],
   widthCtrlCtn: ["w-30"],
+  popover: ["bg-white", "p-3", "rounded-md"],
+  popoverTrigger: [
+    "flex",
+    "items-center",
+    "text-center",
+    "text-peach",
+    "text-lg",
+    "px-4",
+    "py-2",
+    "gap-3",
+    "!border-2",
+    "!border-dotted",
+    "rounded-md",
+    "cursor-pointer",
+    "sm:text-xl",
+    "lg:text-3xl",
+    "lg:py-7",
+  ],
 };
 
 export default DatePicker;
