@@ -1,7 +1,4 @@
 async function post(url = "", data = {}, token = "") {
-  const authentication = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
   const response = await fetch(`http://localhost:5000${url}`, {
     method: "POST",
     headers: {

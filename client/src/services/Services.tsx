@@ -25,6 +25,8 @@ async function getLogin(username: string, password: string) {
     }
     */
     localStorage.setItem("access_token", data.access_token);
+    console.log("\n===== Access token created! =====\n");
+    console.log(data.access_token);
     return true;
   } else {
     localStorage.removeItem("access_token");
@@ -61,8 +63,16 @@ async function getSignup(username: string, password: string) {
   Fetches the entry data for the given date
 */
 async function getEntryData(entryDate: Date): Promise<JournalEntry> {
+  if (!token()) {
+    console.log("No token found");
+  }
   const dateString = entryDate.toISOString().split("T")[0];
-  const response = await post("/entry", { date: dateString }, token());
+  const response = await post(
+    "/entry",
+    { date: dateString },
+    localStorage.getItem("access_token") || ""
+  );
+  console.log(response);
 
   const resEntry: JournalEntry = {
     emotion: Emotion.Neutral,

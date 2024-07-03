@@ -8,24 +8,21 @@ import { useNavigate } from "react-router-dom";
 
 function Navbar() {
   const navigate = useNavigate();
-  const access_token = localStorage.getItem("access_token");
 
-  if (!access_token) {
+  const logOutHandler = () => {
+    localStorage.removeItem("access_token");
     navigate("/");
-  }
+  };
 
-  return "";
-
-  // return (
-  //   <div className={getStyle(styles, "ctn")}>
-  //     <FaQuoteRight className="w-[22px] h-[22px] fill-peach cursor-pointer" />
-  //     {/* <IoMdJournal className="w-[22px] h-[22px] fill-peach" /> */}
-  //     <IoLogOut
-  //       onClick={logOutHandler}
-  //       className="w-[22px] h-[22px] fill-peach cursor-pointer"
-  //     />
-  //   </div>
-  // );
+  return (
+    <div className={getStyle(styles, "ctn")}>
+      <FaQuoteRight className="w-[22px] h-[22px] fill-peach cursor-pointer" />
+      <IoLogOut
+        onClick={logOutHandler}
+        className="w-[22px] h-[22px] fill-peach cursor-pointer"
+      />
+    </div>
+  );
 }
 
 const styles = {

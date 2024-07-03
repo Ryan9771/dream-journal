@@ -9,8 +9,8 @@ from flask_jwt_extended import (
 )
 from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
-from datetime import datetime
-from util.ai import get_analysis
+from datetime import datetime, timedelta
+from util.ai import get_ai_analysis
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -20,6 +20,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = secrets["SQLALCHEMY_DATABASE_URI"]
 app.config["JWT_SECRET_KEY"] = secrets["JWT_KEY"]
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -127,7 +128,7 @@ def signup():
 @app.route("/entry", methods=["POST"])
 @jwt_required()
 def get_entry():
-    print(f"=====\nFLASK: Get entry called\n=====")
+    print(f"=====\nFLASK: Get entry called\n=====", flush=True)
     user_id = get_jwt_identity()
     data = request.get_json()
     """
@@ -202,7 +203,7 @@ def get_analysis():
     emotion = data["emotion"]
 
     try:
-        analysis = get_analysis(text, emotion)
+        analysis = get_ai_analysis(text, emotion)
         return jsonify({"analysis": analysis}), 200
     except Exception as e:
         print(f"\n===== Error: =====\n{e}\n===== Error =====\n", flush=True)

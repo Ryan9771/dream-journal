@@ -2,6 +2,8 @@ from openai import OpenAI
 from dotenv import dotenv_values
 from util.prompts import analysis_prompt
 
+# from prompts import analysis_prompt
+
 secret = dotenv_values(".env")
 
 client = OpenAI(api_key=secret["OPENAI_API_KEY"])
@@ -20,15 +22,16 @@ def _send_to_ai(text: str, emotion: str):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": analysis_prompt},
-            {"role": "user", "content": text},
+            {"role": "user", "content": query},
         ],
     )
-    response_message = response.choices[0].message
+
+    response_message = response.choices[0].message.content
 
     return response_message
 
 
-def get_analysis(text: str, emotion: str):
+def get_ai_analysis(text: str, emotion: str):
     """
     Handles the metadata and entry text to get an analysis.
     """
@@ -37,3 +40,7 @@ def get_analysis(text: str, emotion: str):
     ai_analysis = _send_to_ai(text, emotion)
 
     return ai_analysis
+
+
+if __name__ == "__main__":
+    print(get_ai_analysis("I was walking in the park", "happy"))
