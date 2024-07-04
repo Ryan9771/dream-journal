@@ -72,7 +72,6 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
     { date: dateString },
     localStorage.getItem("access_token") || ""
   );
-  console.log(response);
 
   const resEntry: JournalEntry = {
     emotion: Emotion.Neutral,

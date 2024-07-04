@@ -6,10 +6,12 @@ from flask_jwt_extended import (
     create_access_token,
     jwt_required,
     get_jwt_identity,
+    verify_jwt_in_request,
+    get_jwt,
 )
 from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from util.ai import get_ai_analysis
 
 # Secrets
@@ -63,6 +65,23 @@ class DreamEntry(db.Model):
             "user_id": self.user_id,
             "emotion": self.emotion,
         }
+
+
+#                             YYYY-MM-DD
+# Current token expiry as of (2024-07-04): 2024-08-03
+@app.before_request
+def log_token_validation():
+    if request.endpoint != "login":  # Skip logging for login endpoint
+        try:
+            verify_jwt_in_request()
+            jwt_data = get_jwt()
+            if jwt_data:
+                expiry_time = datetime.fromtimestamp(jwt_data["exp"], tz=timezone.utc)
+                print(expiry_time, flush=True)
+            else:
+                print("No JWT Dict found")
+        except Exception as e:
+            print(f"Token validation error: {e}", flush=True)
 
 
 @app.route("/")
