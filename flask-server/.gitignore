@@ -3,3 +3,4 @@ Dockerfile
 .env
 instance
 __pycache__
+util/__pycache__
