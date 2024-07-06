@@ -93,6 +93,7 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
     resEntry.emotion = stringToEmotion(data.emotion);
     resEntry.text = data.text;
   } else {
+    localStorage.removeItem("access_token");
     console.log("Failed to fetch entry");
   }
 
@@ -120,6 +121,7 @@ async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
     */
     console.log("Entry saved");
   } else {
+    alert("Failed to save entry");
     console.log("Error saving entry");
   }
 }
