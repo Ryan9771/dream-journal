@@ -38,10 +38,11 @@ function EntrySummary() {
 
   /* === AI Analysis Related State Managements */
   const [analyseMode, setAnalyseMode] = useState<boolean>(false);
-  const [aiResponse, setAiResponse] = useState<string>(
-    `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Elit ullamcorper dignissim cras tincidunt lobortis feugiat. Elit pellentesque habitant morbi tristique senectus. Et sollicitudin ac orci phasellus egestas tellus rutrum. Mattis pellentesque id nibh tortor id. Viverra adipiscing at in tellus. Feugiat nisl pretium fusce id velit ut tortor pretium viverra. Sed nisi lacus sed viverra tellus in hac habitasse. Pharetra massa massa ultricies mi quis hendrerit dolor magna eget. Ac tortor dignissim convallis aenean et. Nibh tortor id aliquet lectus proin. Duis ultricies lacus sed turpis tincidunt id. Faucibus et molestie ac feugiat sed lectus vestibulum. Vel eros donec ac odio tempor orci dapibus ultrices. Fermentum dui faucibus in ornare quam viverra orci sagittis eu. Pretium quam vulputate dignissim suspendisse in. Interdum consectetur libero id faucibus nisl tincidunt eget nullam non. Tristique magna sit amet purus. Urna id volutpat lacus laoreet non.
 
-    Ipsum dolor sit amet consectetur. Nisl nunc mi ipsum faucibus vitae aliquet nec ullamcorper. Tellus pellentesque eu tincidunt tortor aliquam. Nunc mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Viverra orci sagittis eu volutpat odio facilisis mauris sit. Pretium lectus quam id leo in vitae turpis. Dolor sit amet consectetur adipiscing elit pellentesque habitant. At volutpat diam ut venenatis tellus in metus. Neque gravida in fermentum et sollicitudin. Iaculis at erat pellentesque adipiscing commodo elit. Sed arcu non odio euismod lacinia. Nam libero justo laoreet sit amet cursus. Risus feugiat in ante metus. Et tortor consequat id porta.`
+  // TODO: Implement loading status for the ai
+  // TODO: Prevent resubmissing the text unless the dream entry changes
+  const [aiResponse, setAiResponse] = useState<string>(
+    "Analyzing your thoughts..."
   );
   const handleAiResponse = (entry: string) => {
     setAnalyseMode(true);
@@ -52,13 +53,13 @@ function EntrySummary() {
 
   // TODO: Implement some indicator to show that the entry
   // has been saved
+
   const handleSave = () => {
     getSaveEntry(entryDate, { emotion: emotion, text: entryText });
     setEntryEditable(false);
   };
 
-  // TODO: Implement some indicator to show that the entry
-  // has been saved
+  // TODO: Implement a cancel button
   const handleDone = () => {
     getSaveEntry(entryDate, { emotion: emotion, text: entryText });
     setEntryEditable(false);
@@ -97,10 +98,8 @@ function EntrySummary() {
           <div className={getStyle(styles, "bodyCtn")}>
             <div className={getStyle(styles, "aiResponseCtn")}>
               <img className="w-24" src={Ai} alt="AI Response Img" />
-              <div className="px-5 flex w-full overflow-hidden">
-                <p className="text-blue-1 italic overflow-y-scroll">
-                  {aiResponse}
-                </p>
+              <div className="px-5 h-3/4 flex w-full overflow-hidden">
+                <p className="text-blue-1 italic">{aiResponse}</p>
               </div>
               <div className={getStyle(styles, "btnsWrapper")}>
                 <DoneButton onClick={() => setAnalyseMode(false)} />
@@ -122,7 +121,7 @@ function EntrySummary() {
                 onChange={handleEntryChange}
                 placeholder="Edit to write how you feel today..."
                 className={getStyle(styles, "input")}
-                maxLength={800}
+                maxLength={2500}
               />
             </div>
             <div className={getStyle(styles, "btnsWrapper")}>
@@ -152,7 +151,7 @@ const styles = {
     "gap-5",
     "bg-blue-1",
     "lg:flex-row",
-    "lg:pt-12",
+    "lg:pt-16",
   ],
   metadataCtn: [
     "flex",
@@ -166,7 +165,8 @@ const styles = {
     "flex",
     "w-full",
     "h-full",
-    "p-1",
+    "px-1",
+    "pt-1",
     "md:px-3",
     "lg:px-5",
     "xl:pr-7",
@@ -183,7 +183,14 @@ const styles = {
   ],
   bodyHeading: ["text-xl", "text-blue-2", "tracking-tight", "lg:text-1xl"],
   btnsWrapper: ["flex", "w-full", "justify-center", "items-center", "h-1/6"],
-  entryCtnWrapper: ["flex", "flex-col", "w-full", "gap-6", "h-5/6"],
+  entryCtnWrapper: [
+    "flex",
+    "flex-col",
+    "w-full",
+    "gap-6",
+    "min-h-96",
+    "lg:h-5/6",
+  ],
   editBtnsCtn: ["flex", "w-full", "items-center", "justify-around"],
   input: [
     "text-blue-1",
@@ -191,11 +198,19 @@ const styles = {
     "rounded-xl",
     "tracking-tight",
     "h-full",
-    "overflow-y-auto",
+    "resize-none",
+    // "overflow-y-auto",
     "leading-5",
     "focus:outline-none",
   ],
-  aiResponseCtn: ["flex", "flex-col", "w-full", "gap-6", "items-center"],
+  aiResponseCtn: [
+    "flex",
+    "flex-col",
+    "w-full",
+    "h-full",
+    "gap-6",
+    "items-center",
+  ],
 };
 
 export default EntrySummary;

@@ -16,10 +16,10 @@ function Navbar() {
 
   return (
     <div className={getStyle(styles, "ctn")}>
-      <FaQuoteRight className="w-[22px] h-[22px] fill-peach cursor-pointer" />
+      <FaQuoteRight className="w-[22px] h-[22px] fill-peach cursor-pointer lg:w-[27px] lg:h-[27px] " />
       <IoLogOut
         onClick={logOutHandler}
-        className="w-[22px] h-[22px] fill-peach cursor-pointer"
+        className="w-[22px] h-[22px] fill-peach cursor-pointer lg:w-[27px] lg:h-[27px] "
       />
     </div>
   );

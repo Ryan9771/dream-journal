@@ -88,15 +88,7 @@ const styles = {
   ctn: ["flex", "items-center", "justify-start", "px-5"],
   icon: ["h-4", "w-4", "text-peach"],
   popover: ["bg-white", "rounded-md"],
-  popoverContent: [
-    // "bg-gradient-to-b",
-    // "from-white",
-    // "from-1%",
-    // "to-peach",
-    "bg-white",
-    "p-3",
-    "rounded-lg",
-  ],
+  popoverContent: ["bg-white", "p-3", "rounded-lg"],
   popoverTrigger: [
     "flex",
     "items-center",
@@ -111,8 +103,8 @@ const styles = {
     "rounded-md",
     "cursor-pointer",
     "sm:text-xl",
-    "lg:text-3xl",
-    "lg:py-7",
+    "lg:text-2xl",
+    "lg:py-4",
   ],
   widthCtrlCtn: ["w-30"],
 };
