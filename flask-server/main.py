@@ -1,3 +1,4 @@
+from cryptography.fernet import Fernet
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -13,7 +14,8 @@ from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
 from datetime import datetime, timedelta, timezone
 from util.ai import get_ai_analysis
-from util.util import encrypt_data, decrypt_data
+
+# from util.util import encrypt_data, decrypt_data
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -28,6 +30,19 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
+
+
+# ======= Cryptography =======
+def encrypt_data(data: str) -> str:
+    if not data.strip():
+        return ""
+    return f.encrypt(data.encode()).decode()
+
+
+def decrypt_data(encrypted_data: str) -> str:
+    if not encrypted_data.strip():
+        return ""
+    return f.decrypt(encrypted_data.encode()).decode()
 
 
 # ======= Models =======
@@ -107,7 +122,9 @@ def login():
     # Check the db for said user
     user = User.query.filter_by(username=username).first()
 
-    if user and bcrypt.check_password_hash(user.password, decrypt_data(password)):
+    print(f"DECRYPTED DATA: {password}", flush=True)
+
+    if user and bcrypt.check_password_hash(user.password, password):
         print("\n=====\nUser found\n=====", flush=True)
         access_token = create_access_token(identity=user.id)
         return (
@@ -136,7 +153,7 @@ def signup():
         print("User already exists", flush=True)
         return jsonify({"message": "User already exists"}), 400
 
-    new_user = User(data["username"], decrypt_data(data["password"]))
+    new_user = User(data["username"], data["password"])
 
     # Add user to the database
     db.session.add(new_user)
@@ -192,7 +209,7 @@ def save_entry():
     } 
     """
     date_str = data["date"]
-    entry_text = data["text"]
+    entry_text = encrypt_data(data["text"])
     entry_emotion = data["emotion"]
 
     query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -201,13 +218,13 @@ def save_entry():
     if not dream_entry:
         new_entry = DreamEntry(
             date=query_date,
-            text=encrypt_data(entry_text),
+            text=entry_text,
             user_id=user_id,
             emotion=entry_emotion,
         )
         db.session.add(new_entry)
     else:
-        dream_entry.text = encrypt_data(data["text"])
+        dream_entry.text = entry_text
         dream_entry.emotion = data["emotion"]
 
     db.session.commit()
@@ -227,7 +244,7 @@ def get_analysis():
         "emotion": "emotion"
     }
     """
-    text = decrypt_data(data["text"])
+    text = data["text"]
     emotion = data["emotion"]
 
     try:
@@ -239,6 +256,20 @@ def get_analysis():
 
 
 if __name__ == "__main__":
+    encryption_key = dotenv_values(".env")["ENCRYPTION_KEY"]
+    f = Fernet(encryption_key.encode())
+    sentence = "Hi there"
+
+    print(f"Original: {sentence}")
+
+    encrypted = encrypt_data(sentence)
+    # encrypted = f.encrypt(sentence.encode()).decode()
+    print(f"Encrypted: {encrypted}")
+
+    decrypted = decrypt_data(encrypted)
+    # decrypted = f.decrypt(encrypted.encode()).decode()
+    print(f"Decrypted: {decrypted}")
+
     with app.app_context():
         db.create_all()
     app.run(host="0.0.0.0", port=5000, debug=True)

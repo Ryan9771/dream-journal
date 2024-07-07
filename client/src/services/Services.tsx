@@ -1,8 +1,12 @@
 import { Emotion, JournalEntry } from "../util/Types";
-import { post, encryptData, decryptData } from "../util/util";
+import { post } from "../util/util";
 import { stringToEmotion, emotionToString } from "../util/Types";
 
 function token() {
+  if (!localStorage.getItem("access_token")) {
+    console.log("No token found");
+  }
+
   return localStorage.getItem("access_token") || "";
 }
 
@@ -12,7 +16,7 @@ function token() {
 async function getLogin(username: string, password: string) {
   const response = await post("/login", {
     username: username,
-    password: encryptData(password),
+    password: password,
   });
 
   if (response.ok) {
@@ -39,7 +43,7 @@ async function getLogin(username: string, password: string) {
 async function getSignup(username: string, password: string) {
   const response = await post("/signup", {
     username: username,
-    password: encryptData(password),
+    password: password,
   });
 
   const data = await response.json();
@@ -50,7 +54,7 @@ async function getSignup(username: string, password: string) {
     }
     */
   if (response.ok) {
-    localStorage.setItem("access_token", decryptData(data.access_token));
+    localStorage.setItem("access_token", data.access_token);
     return true;
   } else {
     alert(data.message);
@@ -63,15 +67,8 @@ async function getSignup(username: string, password: string) {
   Fetches the entry data for the given date
 */
 async function getEntryData(entryDate: Date): Promise<JournalEntry> {
-  if (!token()) {
-    console.log("No token found");
-  }
   const dateString = entryDate.toISOString().split("T")[0];
-  const response = await post(
-    "/entry",
-    { date: dateString },
-    localStorage.getItem("access_token") || ""
-  );
+  const response = await post("/entry", { date: dateString }, token());
 
   const resEntry: JournalEntry = {
     emotion: Emotion.Neutral,
@@ -91,7 +88,7 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
 
     // Mapper to map text emotion to enum
     resEntry.emotion = stringToEmotion(data.emotion);
-    resEntry.text = decryptData(data.text);
+    resEntry.text = data.text;
   } else {
     localStorage.removeItem("access_token");
     console.log("Failed to fetch entry");
@@ -107,7 +104,7 @@ async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
     {
       date: dateString,
       emotion: emotionToString(entry.emotion),
-      text: encryptData(entry.text),
+      text: entry.text,
     },
     token()
   );
