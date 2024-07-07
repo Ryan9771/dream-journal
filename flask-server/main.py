@@ -1,4 +1,3 @@
-from cryptography.fernet import Fernet
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -14,6 +13,7 @@ from flask_bcrypt import Bcrypt
 from dotenv import dotenv_values
 from datetime import datetime, timedelta, timezone
 from util.ai import get_ai_analysis
+from util.util import encrypt_data, decrypt_data
 
 # Secrets
 secrets = dotenv_values(".env")
@@ -107,7 +107,7 @@ def login():
     # Check the db for said user
     user = User.query.filter_by(username=username).first()
 
-    if user and bcrypt.check_password_hash(user.password, password):
+    if user and bcrypt.check_password_hash(user.password, decrypt_data(password)):
         print("\n=====\nUser found\n=====", flush=True)
         access_token = create_access_token(identity=user.id)
         return (
@@ -136,7 +136,7 @@ def signup():
         print("User already exists", flush=True)
         return jsonify({"message": "User already exists"}), 400
 
-    new_user = User(data["username"], data["password"])
+    new_user = User(data["username"], decrypt_data(data["password"]))
 
     # Add user to the database
     db.session.add(new_user)
@@ -169,7 +169,12 @@ def get_entry():
         db.session.commit()
         return jsonify({"emotion": "neutral", "text": ""}), 201
 
-    return jsonify({"emotion": dream_entry.emotion, "text": dream_entry.text}), 200
+    return (
+        jsonify(
+            {"emotion": dream_entry.emotion, "text": decrypt_data(dream_entry.text)}
+        ),
+        200,
+    )
 
 
 @app.route("/entry/save", methods=["POST"])
@@ -195,11 +200,14 @@ def save_entry():
 
     if not dream_entry:
         new_entry = DreamEntry(
-            date=query_date, text=entry_text, user_id=user_id, emotion=entry_emotion
+            date=query_date,
+            text=encrypt_data(entry_text),
+            user_id=user_id,
+            emotion=entry_emotion,
         )
         db.session.add(new_entry)
     else:
-        dream_entry.text = data["text"]
+        dream_entry.text = encrypt_data(data["text"])
         dream_entry.emotion = data["emotion"]
 
     db.session.commit()
@@ -219,7 +227,7 @@ def get_analysis():
         "emotion": "emotion"
     }
     """
-    text = data["text"]
+    text = decrypt_data(data["text"])
     emotion = data["emotion"]
 
     try:
