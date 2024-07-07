@@ -4,3 +4,4 @@ Dockerfile
 instance
 __pycache__
 util/__pycache__
+ideas*
