@@ -1,3 +1,4 @@
+from cryptography.fernet import Fernet
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
