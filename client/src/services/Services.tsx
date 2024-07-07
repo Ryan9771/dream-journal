@@ -1,5 +1,5 @@
 import { Emotion, JournalEntry } from "../util/Types";
-import { post } from "../util/util";
+import { post, encryptData, decryptData } from "../util/util";
 import { stringToEmotion, emotionToString } from "../util/Types";
 
 function token() {
@@ -12,7 +12,7 @@ function token() {
 async function getLogin(username: string, password: string) {
   const response = await post("/login", {
     username: username,
-    password: password,
+    password: encryptData(password),
   });
 
   if (response.ok) {
@@ -39,7 +39,7 @@ async function getLogin(username: string, password: string) {
 async function getSignup(username: string, password: string) {
   const response = await post("/signup", {
     username: username,
-    password: password,
+    password: encryptData(password),
   });
 
   const data = await response.json();
@@ -50,7 +50,7 @@ async function getSignup(username: string, password: string) {
     }
     */
   if (response.ok) {
-    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("access_token", decryptData(data.access_token));
     return true;
   } else {
     alert(data.message);
@@ -91,7 +91,7 @@ async function getEntryData(entryDate: Date): Promise<JournalEntry> {
 
     // Mapper to map text emotion to enum
     resEntry.emotion = stringToEmotion(data.emotion);
-    resEntry.text = data.text;
+    resEntry.text = decryptData(data.text);
   } else {
     localStorage.removeItem("access_token");
     console.log("Failed to fetch entry");
@@ -107,7 +107,7 @@ async function getSaveEntry(entryDate: Date, entry: JournalEntry) {
     {
       date: dateString,
       emotion: emotionToString(entry.emotion),
-      text: entry.text,
+      text: encryptData(entry.text),
     },
     token()
   );

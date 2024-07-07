@@ -37,4 +37,4 @@ function decryptData(data: string) {
   return originalText;
 }
 
-export { post };
+export { post, encryptData, decryptData };
