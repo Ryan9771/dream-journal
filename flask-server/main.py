@@ -1,275 +1,222 @@
-from cryptography.fernet import Fernet
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import (
-    JWTManager,
-    create_access_token,
-    jwt_required,
-    get_jwt_identity,
-    verify_jwt_in_request,
-    get_jwt,
-)
-from flask_bcrypt import Bcrypt
-from dotenv import dotenv_values
+"""Recall API: Firebase-authenticated dream storage and guarded AI insights."""
+
+from __future__ import annotations
+
+import hashlib
+import os
 from datetime import datetime, timedelta, timezone
-from util.ai import get_ai_analysis
+from functools import wraps
 
-# from util.util import encrypt_data, decrypt_data
+import firebase_admin
+from firebase_admin import auth, firestore
+from flask import Flask, g, jsonify, request
+from flask_cors import CORS
 
-# Secrets
-secrets = dotenv_values(".env")
+from util.ai import analyse_dream
 
-# Setting up the app
-app = Flask(__name__)
-CORS(app, supports_credentials=True)
-app.config["SQLALCHEMY_DATABASE_URI"] = secrets["SQLALCHEMY_DATABASE_URI"]
-app.config["JWT_SECRET_KEY"] = secrets["JWT_KEY"]
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
+app = Flask(__name__, static_folder="../client/build", static_url_path="")
+CORS(
+    app,
+    resources={r"/api/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")}},
+)
 
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
+db = firestore.client()
 
-
-# ======= Cryptography =======
-def encrypt_data(data: str) -> str:
-    if not data.strip():
-        return ""
-    return f.encrypt(data.encode()).decode()
+MAX_ENTRY_CHARS = 6000
+DAILY_INSIGHT_LIMIT = 3
+INSIGHT_COOLDOWN = timedelta(seconds=45)
 
 
-def decrypt_data(encrypted_data: str) -> str:
-    if not encrypted_data.strip():
-        return ""
-    return f.decrypt(encrypted_data.encode()).decode()
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-# ======= Models =======
-class User(db.Model):
-    """User Model"""
-
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = bcrypt.generate_password_hash(password).decode("utf-8")
-
-
-class DreamEntry(db.Model):
-    """Dream Entry Model"""
-
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    text = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    emotion = db.Column(db.String(150), nullable=False)
-
-    def __init__(self, date, text, user_id, emotion):
-        self.date = date
-        self.text = text
-        self.user_id = user_id
-        self.emotion = emotion
-
-    def to_dict(self):
-        return {
-            "emotion": self.id,
-            "date": self.date,
-            "text": self.text,
-            "user_id": self.user_id,
-            "emotion": self.emotion,
-        }
-
-
-#                             YYYY-MM-DD
-# Current token expiry as of (2024-07-04): 2024-08-03
-@app.before_request
-def log_token_validation():
-    if request.endpoint != "login":  # Skip logging for login endpoint
+def require_firebase_user(handler):
+    @wraps(handler)
+    def wrapped(*args, **kwargs):
+        header = request.headers.get("Authorization", "")
+        if not header.startswith("Bearer "):
+            return jsonify({"error": "Authentication required."}), 401
         try:
-            verify_jwt_in_request()
-            jwt_data = get_jwt()
-            if jwt_data:
-                expiry_time = datetime.fromtimestamp(jwt_data["exp"], tz=timezone.utc)
-                print(expiry_time, flush=True)
-            else:
-                print("No JWT Dict found")
-        except Exception as e:
-            print(f"Token validation error: {e}", flush=True)
+            g.user = auth.verify_id_token(header[7:])
+        except (ValueError, auth.InvalidIdTokenError, auth.ExpiredIdTokenError):
+            return jsonify({"error": "Your session has expired. Please sign in again."}), 401
+        return handler(*args, **kwargs)
+
+    return wrapped
 
 
-@app.route("/")
-def home():
-    return "Flask server works!"
+def user_entries(uid: str):
+    return db.collection("users").document(uid).collection("dreams")
 
 
-@app.route("/login", methods=["POST"])
-def login():
-    print("=====\nFLASK: Login called\n=====", flush=True)
-    data = request.get_json()
-    """
-    Request Type:
-    {
-        "username": "username",
-        "password": "password"
-    } 
-    """
-    username = data["username"]
-    password = data["password"]
-
-    # Check the db for said user
-    user = User.query.filter_by(username=username).first()
-
-    print(f"DECRYPTED DATA: {password}", flush=True)
-
-    if user and bcrypt.check_password_hash(user.password, password):
-        print("\n=====\nUser found\n=====", flush=True)
-        access_token = create_access_token(identity=user.id)
-        return (
-            jsonify({"message": "Login successful", "access_token": access_token}),
-            200,
-        )
-
-    if not user:
-        print("User not found", flush=True)
-
-    return jsonify({"message": "Invalid credentials"}), 401
+def serialize(doc) -> dict:
+    data = doc.to_dict()
+    data["id"] = doc.id
+    for key in ("createdAt", "updatedAt"):
+        if hasattr(data.get(key), "isoformat"):
+            data[key] = data[key].isoformat()
+    return data
 
 
-@app.route("/signup", methods=["POST"])
-def signup():
-    data = request.get_json()
-    """
-    Request Type:
-    {
-        "username": "username",
-        "password": "password"
-    }
-    """
-    # User already exists
-    if User.query.filter_by(username=data["username"]).first():
-        print("User already exists", flush=True)
-        return jsonify({"message": "User already exists"}), 400
-
-    new_user = User(data["username"], data["password"])
-
-    # Add user to the database
-    db.session.add(new_user)
-    db.session.commit()
-
-    return jsonify({"message": "User created successfully"}), 201
+@app.get("/api/health")
+def health():
+    return jsonify({"status": "ok", "service": "recall-api"})
 
 
-@app.route("/entry", methods=["POST"])
-@jwt_required()
-def get_entry():
-    print(f"=====\nFLASK: Get entry called\n=====", flush=True)
-    user_id = get_jwt_identity()
-    data = request.get_json()
-    """
-    Recieved Request Type:
-    {
-        "date": "username",
-    }
-    """
-    date_str = data["date"]
-    query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
-
-    if not dream_entry:
-        new_entry = DreamEntry(
-            date=query_date, text="", user_id=user_id, emotion="neutral"
-        )
-        db.session.add(new_entry)
-        db.session.commit()
-        return jsonify({"emotion": "neutral", "text": ""}), 201
-
-    return (
-        jsonify(
-            {"emotion": dream_entry.emotion, "text": decrypt_data(dream_entry.text)}
-        ),
-        200,
-    )
+@app.get("/api/dreams")
+@require_firebase_user
+def list_dreams():
+    month = request.args.get("month", "")
+    query = user_entries(g.user["uid"])
+    if month:
+        query = query.where("date", ">=", f"{month}-01").where("date", "<=", f"{month}-31")
+    docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(100).stream()
+    return jsonify({"dreams": [serialize(doc) for doc in docs]})
 
 
-@app.route("/entry/save", methods=["POST"])
-@jwt_required()
-def save_entry():
-    print("FLASK: Save entry called", flush=True)
-    user_id = get_jwt_identity()
-    data = request.get_json()
-    """
-    Recieved Request Type:
-    {
-        "date": "username",
-        "text": "text",
-        "emotion": "emotion"
-    } 
-    """
-    date_str = data["date"]
-    entry_text = encrypt_data(data["text"])
-    entry_emotion = data["emotion"]
-
-    query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    dream_entry = DreamEntry.query.filter_by(user_id=user_id, date=query_date).first()
-
-    if not dream_entry:
-        new_entry = DreamEntry(
-            date=query_date,
-            text=entry_text,
-            user_id=user_id,
-            emotion=entry_emotion,
-        )
-        db.session.add(new_entry)
-    else:
-        dream_entry.text = entry_text
-        dream_entry.emotion = data["emotion"]
-
-    db.session.commit()
-
-    return jsonify({"message": "Entry saved successfully"}), 200
-
-
-@app.route("/entry/ai", methods=["POST"])
-@jwt_required()
-def get_analysis():
-    """Get analysis for the dream entry."""
-    data = request.get_json()
-    """
-    Recieved Request Type:
-    {
-        "text": "text",
-        "emotion": "emotion"
-    }
-    """
-    text = data["text"]
-    emotion = data["emotion"]
-
+@app.post("/api/dreams")
+@require_firebase_user
+def create_dream():
+    payload = request.get_json(silent=True) or {}
+    body = str(payload.get("body", "")).strip()
+    date = str(payload.get("date", ""))
+    mood = str(payload.get("mood", "curious"))
+    if not (10 <= len(body) <= MAX_ENTRY_CHARS):
+        return jsonify({"error": "Dreams must be between 10 and 6,000 characters."}), 400
+    if mood not in {"peaceful", "joyful", "curious", "uneasy", "heavy"}:
+        return jsonify({"error": "Unknown mood."}), 400
     try:
-        analysis = get_ai_analysis(text, emotion)
-        return jsonify({"analysis": analysis}), 200
-    except Exception as e:
-        print(f"\n===== Error: =====\n{e}\n===== Error =====\n", flush=True)
-        return jsonify({"message": "Error in processing the request"}), 500
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Date must use YYYY-MM-DD."}), 400
+    now = utcnow()
+    doc = user_entries(g.user["uid"]).document()
+    data = {
+        "date": date,
+        "body": body,
+        "contentHtml": str(payload.get("contentHtml", ""))[:24000],
+        "title": str(payload.get("title", "")).strip()[:90] or "Untitled dream",
+        "mood": mood,
+        "createdAt": now,
+        "updatedAt": now,
+        "contentHash": hashlib.sha256(body.encode()).hexdigest(),
+        "insightStatus": "none",
+    }
+    doc.set(data)
+    return jsonify({"dream": {**data, "id": doc.id, "createdAt": now.isoformat(), "updatedAt": now.isoformat()}}), 201
+
+
+@app.patch("/api/dreams/<dream_id>")
+@require_firebase_user
+def update_dream(dream_id: str):
+    ref = user_entries(g.user["uid"]).document(dream_id)
+    snap = ref.get()
+    if not snap.exists:
+        return jsonify({"error": "Dream not found."}), 404
+    payload = request.get_json(silent=True) or {}
+    body = str(payload.get("body", snap.get("body"))).strip()
+    if not (10 <= len(body) <= MAX_ENTRY_CHARS):
+        return jsonify({"error": "Dreams must be between 10 and 6,000 characters."}), 400
+    update = {
+        "body": body,
+        "contentHtml": str(payload.get("contentHtml", snap.get("contentHtml") or ""))[:24000],
+        "title": str(payload.get("title", snap.get("title"))).strip()[:90],
+        "mood": payload.get("mood", snap.get("mood")),
+        "updatedAt": utcnow(),
+        "contentHash": hashlib.sha256(body.encode()).hexdigest(),
+    }
+    if update["contentHash"] != snap.get("contentHash") or update["mood"] != snap.get("mood"):
+        update["insightStatus"] = "stale"
+        update["insight"] = firestore.DELETE_FIELD
+    ref.update(update)
+    return jsonify({"dream": serialize(ref.get())})
+
+
+@firestore.transactional
+def reserve_insight(transaction, user_ref):
+    snapshot = user_ref.get(transaction=transaction)
+    data = snapshot.to_dict() or {}
+    now = utcnow()
+    day_key = now.strftime("%Y-%m-%d")
+    usage = data.get("insightUsage", {})
+    count = usage.get("count", 0) if usage.get("day") == day_key else 0
+    last_at = usage.get("lastAt")
+    if count >= DAILY_INSIGHT_LIMIT:
+        return False, "You’ve reached today’s reflection limit. More will be available tomorrow."
+    if last_at and now - last_at < INSIGHT_COOLDOWN:
+        return False, "Please give the last reflection a moment before requesting another."
+    transaction.set(
+        user_ref,
+        {"insightUsage": {"day": day_key, "count": count + 1, "lastAt": now}},
+        merge=True,
+    )
+    return True, ""
+
+
+@app.post("/api/dreams/<dream_id>/insight")
+@require_firebase_user
+def create_insight(dream_id: str):
+    uid = g.user["uid"]
+    ref = user_entries(uid).document(dream_id)
+    snap = ref.get()
+    if not snap.exists:
+        return jsonify({"error": "Dream not found."}), 404
+    dream = snap.to_dict()
+    content_hash = dream["contentHash"]
+    existing = dream.get("insight")
+    if existing and existing.get("contentHash") == content_hash:
+        return jsonify({"insight": existing, "cached": True})
+
+    allowed, message = reserve_insight(db.transaction(), db.collection("users").document(uid))
+    if not allowed:
+        return jsonify({"error": message}), 429
+
+    # Retrieve compact metadata only. Raw historical dreams never enter this call.
+    memory = (
+        db.collection("users")
+        .document(uid)
+        .collection("memory")
+        .document("rolling")
+        .get()
+        .to_dict()
+        or {}
+    )
+    try:
+        result = analyse_dream(
+            body=dream["body"],
+            self_reported_mood=dream["mood"],
+            recent_context=memory,
+            safety_identifier=hashlib.sha256(uid.encode()).hexdigest()[:32],
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 422
+
+    insight = {**result["insight"], "contentHash": content_hash, "createdAt": utcnow().isoformat()}
+    ref.update({"title": result["title"], "insight": insight, "insightStatus": "ready"})
+    db.collection("users").document(uid).collection("memory").document("rolling").set(
+        {
+            "themes": firestore.ArrayUnion(result["memory"]["themes"]),
+            "motifs": firestore.ArrayUnion(result["memory"]["motifs"]),
+            "lastMood": result["memory"]["mood"],
+            "updatedAt": utcnow(),
+        },
+        merge=True,
+    )
+    return jsonify({"insight": insight, "title": result["title"], "cached": False})
+
+
+@app.get("/")
+def index():
+    return app.send_static_file("index.html") if app.static_folder and os.path.exists(f"{app.static_folder}/index.html") else "Recall API"
+
+
+@app.errorhandler(429)
+def rate_limited(_error):
+    return jsonify({"error": "Too many requests. Please slow down."}), 429
 
 
 if __name__ == "__main__":
-    encryption_key = dotenv_values(".env")["ENCRYPTION_KEY"]
-    f = Fernet(encryption_key.encode())
-    sentence = "Hi there"
-
-    print(f"Original: {sentence}")
-
-    encrypted = encrypt_data(sentence)
-    # encrypted = f.encrypt(sentence.encode()).decode()
-    print(f"Encrypted: {encrypted}")
-
-    decrypted = decrypt_data(encrypted)
-    # decrypted = f.decrypt(encrypted.encode()).decode()
-    print(f"Decrypted: {decrypted}")
-
-    with app.app_context():
-        db.create_all()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=os.getenv("FLASK_DEBUG") == "1")

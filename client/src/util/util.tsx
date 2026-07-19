@@ -11,4 +11,8 @@ async function post(url = "", data = {}, token = "") {
   return response;
 }
 
-export { post };
+function dateToDateString(date: Date) {
+  return date.toISOString().split("T")[0];
+}
+
+export { post, dateToDateString };

@@ -16,7 +16,7 @@ function EmotionSelector({ givenEmotion, onChangeEmotion }: Props) {
 
   return (
     <div className={getStyle(styles, "ctn")}>
-      <p className={getStyle(styles, "heading")}>I felt...</p>
+      <p className={getStyle(styles, "heading")}>My dream felt...</p>
       <div className={getStyle(styles, "selectorCtn")}>
         <EmotionButton
           clickHandler={clickHandler}

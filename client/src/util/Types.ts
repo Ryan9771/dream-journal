@@ -69,9 +69,3 @@ export interface JournalEntry {
     emotion: Emotion;
     text: string;
 }
-
-export enum AuthState {
-    Default,
-    Login, 
-    Signup,
-}
