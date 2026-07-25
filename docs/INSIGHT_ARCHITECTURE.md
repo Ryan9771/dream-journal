@@ -131,7 +131,6 @@ Input:
 
 Output:
 
-- generated title
 - two to four analysis paragraphs, roughly 180–420 words overall
 - one to three starter, reused personal, or genuinely new themes
 - one open reflection question
@@ -142,6 +141,12 @@ Output:
 The output uses a strict JSON Schema. Structured Outputs provide schema
 adherence rather than merely valid JSON:
 <https://developers.openai.com/api/docs/guides/structured-outputs>.
+
+The journal title is generated separately on first save and after the dream text changes with a much smaller,
+strictly bounded `gpt-5.4-nano` request with reasoning disabled. It prefers five or six words, sends no
+more than 3,000 characters, stores no API response, and falls back locally if
+the title request fails. The reflection workflow preserves that title instead
+of generating or replacing it again.
 
 ## Safety and cost controls
 

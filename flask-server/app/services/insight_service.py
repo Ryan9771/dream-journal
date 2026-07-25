@@ -210,7 +210,6 @@ def generate_insight(user: dict, dream_id: str) -> dict:
     result["insight"]["connectionDreamIds"] = connection_ids
 
     insight = {**result["insight"], "contentHash": content_hash, "createdAt": utcnow().isoformat()}
-    dream["title"] = result["title"]
     dream["insight"] = insight
     ref.update(
         {
@@ -243,7 +242,7 @@ def generate_insight(user: dict, dream_id: str) -> dict:
 
     if current_embedding:
         episode_private = {
-            "title": result["title"],
+            "title": dream["title"],
             "summary": memory_result["episodeSummary"],
             "anchors": bounded_unique([], memory_result["anchors"], 6),
             "themes": memory_result["themes"],
@@ -270,4 +269,4 @@ def generate_insight(user: dict, dream_id: str) -> dict:
         for expired in retained[MAX_MEMORY_EPISODES:]:
             expired.reference.delete()
 
-    return {"insight": insight, "title": result["title"], "cached": False}
+    return {"insight": insight, "title": dream["title"], "cached": False}

@@ -17,6 +17,7 @@ from app.dreams.repository import (
 )
 from app.firebase import db
 from app.security.encryption import keyed_digest
+from app.services.title_service import title_for_new_dream
 from app.time import utcnow
 
 blueprint = Blueprint("dreams", __name__, url_prefix="/api/dreams")
@@ -52,10 +53,11 @@ def create_dream():
     now = utcnow()
     uid = g.user["uid"]
     doc = user_entries(uid).document()
+    title = title_for_new_dream(uid, body)
     private_data = {
         "body": body,
         "contentHtml": str(payload.get("contentHtml", ""))[:24000],
-        "title": str(payload.get("title", "")).strip()[:90] or "Untitled dream",
+        "title": title,
         "mood": mood,
     }
     public_data = {
@@ -96,10 +98,12 @@ def update_dream(dream_id: str):
         return jsonify({"error": "Dreams must be between 10 and 6,000 characters."}), 400
     if mood not in VALID_MOODS:
         return jsonify({"error": "Unknown mood."}), 400
+    body_changed = body != str(existing.get("body", "")).strip()
+    title = title_for_new_dream(uid, body) if body_changed else existing.get("title", "")
     private_update = {
         "body": body,
         "contentHtml": str(payload.get("contentHtml", existing.get("contentHtml") or ""))[:24000],
-        "title": str(payload.get("title", existing.get("title"))).strip()[:90],
+        "title": title,
         "mood": mood,
         **({"insight": existing["insight"]} if existing.get("insight") else {}),
     }
@@ -108,7 +112,7 @@ def update_dream(dream_id: str):
         "contentHash": keyed_digest(uid, "dream-content", body),
     }
     insight_invalidated = (
-        public_update["contentHash"] != existing.get("contentHash")
+        body_changed
         or mood != normalize_mood(existing.get("mood"))
     )
     if insight_invalidated:

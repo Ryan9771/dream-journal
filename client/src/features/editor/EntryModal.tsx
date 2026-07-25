@@ -132,7 +132,7 @@ export default function EntryModal({
                 await onSave({
                   id: initialDream?.id || crypto.randomUUID(),
                   date: initialDream?.date || isoDate(date),
-                  title: initialDream?.title || body.trim().split(/[.!?]/)[0].split(/\s+/).slice(0, 7).join(" ") || "Untitled dream",
+                  title: initialDream?.title || "",
                   body: body.trim(),
                   contentHtml,
                   mood,

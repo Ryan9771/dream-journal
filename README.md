@@ -5,16 +5,16 @@ A private, calming dream journal with Google sign-in, a tactile monthly calendar
 ## What changed
 
 - Apple-inspired responsive experience with a peach calendar, circular days, mood dots, “Today” navigation, subtle clouds, and reduced-motion support.
-- Google sign-in through Firebase Authentication (popup on desktop, redirect on mobile).
+- Google sign-in through Firebase Authentication.
 - Firestore data isolated under `users/{uid}` and accessed only by the authenticated Flask API.
 - Multiple dream entries per date, expandable journal cards, search, editing primitives, and a focused capture modal.
-- Structured, persistent insight records with generated titles, themes, emotional tone, a reflection question, and evidence-gated pattern notes.
+- Short model-generated journal titles plus persistent insights with themes, emotional tone, a reflection question, and evidence-gated pattern notes.
 - A bounded semantic episode memory that can notice a similar person, place, relationship, or event without resending old dream text.
 - Cloud Run production container that serves the React build and Flask API together.
 
 ## Insight architecture
 
-One bounded generation call handles title, reflection, structured metadata, and memory extraction. Small 256-dimension embedding calls retrieve relevant prior episode cards and merge proposed themes into the user's personal taxonomy. LangChain/LangGraph is deliberately not used: the workflow is a fixed retrieve → reflect → persist pipeline with no tool-driven agent loop, branching, or resumable human approval.
+A small title call runs when a dream is first saved and after its text changes. The separate bounded insight call handles reflection, structured metadata, and memory extraction. Small 256-dimension embedding calls retrieve relevant prior episode cards and merge proposed themes into the user's personal taxonomy. LangChain/LangGraph is deliberately not used: the workflow is a fixed retrieve → reflect → persist pipeline with no tool-driven agent loop, branching, or resumable human approval.
 
 The request contains:
 
@@ -28,7 +28,9 @@ Raw previous dreams are never resent as historical context. The current dream is
 Cost and abuse controls:
 
 - A configurable cost-conscious model (`gpt-5.6-luna` by default), low reasoning, and a 1,400 output-token ceiling.
-- One structured response rather than separate title, metadata, and analysis calls.
+- Titles use `gpt-5.4-nano`, no reasoning, at most 3,000 input characters, and an 80-token output ceiling. A local fallback never prevents the journal entry from being saved.
+- AI titles run only on first save or after dream text changes and are capped at 20 per user per UTC day; later entries still save with the local fallback.
+- One structured insight response rather than separate metadata and analysis calls.
 - One to three themes selected from 18 starter labels or a genuinely new personal label; the UI shows up to four recent themes and only reveals “Most recurring” after a theme appears twice.
 - Proposed labels are embedded in one small batch and merged into semantically close personal themes. Legacy aliases such as `trust → self-trust` are also canonicalised.
 - Each user keeps at most 60 active theme labels. Low-frequency, older labels are archived rather than deleted when the catalogue grows, so the prompt stays compact while history remains intact.
@@ -239,7 +241,7 @@ gcloud run deploy recall \
   --allow-unauthenticated \
   --service-account recall-api@YOUR_PROJECT_ID.iam.gserviceaccount.com \
   --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:1 \
-  --set-env-vars FIRESTORE_DATABASE_ID=YOUR_DATABASE_ID,OPENAI_INSIGHT_MODEL=gpt-5.6-luna,OPENAI_EMBEDDING_MODEL=text-embedding-3-small,OPENAI_EMBEDDING_DIMENSIONS=256,SEMANTIC_MEMORY_ENABLED=true,THEME_MERGE_THRESHOLD=0.82,THEME_CANDIDATE_THRESHOLD=0.25,DATA_ENCRYPTION_MODE=required,DATA_KMS_KEY_NAME=projects/YOUR_PROJECT_ID/locations/europe-west2/keyRings/recall-data/cryptoKeys/journal-data \
+  --set-env-vars FIRESTORE_DATABASE_ID=YOUR_DATABASE_ID,OPENAI_TITLE_MODEL=gpt-5.4-nano,OPENAI_INSIGHT_MODEL=gpt-5.6-luna,OPENAI_EMBEDDING_MODEL=text-embedding-3-small,OPENAI_EMBEDDING_DIMENSIONS=256,SEMANTIC_MEMORY_ENABLED=true,THEME_MERGE_THRESHOLD=0.82,THEME_CANDIDATE_THRESHOLD=0.25,DATA_ENCRYPTION_MODE=required,DATA_KMS_KEY_NAME=projects/YOUR_PROJECT_ID/locations/europe-west2/keyRings/recall-data/cryptoKeys/journal-data \
   --memory 512Mi \
   --cpu 1 \
   --min 0 \
@@ -267,6 +269,7 @@ the next numbered secret version when rotating the key.
 ```text
 users/{uid}
   insightUsage { day, count, lastAt }
+  titleUsage { day, count }
   security/encryptionKey
     wrappedRootKey, kmsKeyName, algorithm, version
   dreams/{dreamId}

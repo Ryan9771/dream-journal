@@ -5,6 +5,7 @@ from datetime import timedelta
 
 MAX_ENTRY_CHARS = 6000
 DAILY_INSIGHT_LIMIT = 3
+DAILY_TITLE_LIMIT = 20
 INSIGHT_COOLDOWN = timedelta(seconds=45)
 VALID_MOODS = {"peaceful", "joyful", "curious", "uneasy", "sad", "angry", "mixed"}
 MAX_MEMORY_EPISODES = 60

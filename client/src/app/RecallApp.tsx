@@ -119,7 +119,7 @@ export default function RecallApp() {
           }}
           onSave={async (dream) => {
             const response = editingDream
-              ? await dreamApi.update(dream.id, { body: dream.body, contentHtml: dream.contentHtml, mood: dream.mood, title: dream.title })
+              ? await dreamApi.update(dream.id, { body: dream.body, contentHtml: dream.contentHtml, mood: dream.mood })
               : await dreamApi.create(dream);
             const saved = normalizeDream(response.dream);
             setDreams((currentDreams) => editingDream

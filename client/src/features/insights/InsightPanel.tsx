@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { FiMoon, FiStar, FiX } from "react-icons/fi";
+import { FiLoader, FiMoon, FiStar, FiX } from "react-icons/fi";
 import type { Dream } from "../../domain/dreams";
 import { moodMeta, normalizeMood } from "../../domain/dreams";
 import getStyle from "../../styles/getStyle";
@@ -60,11 +60,19 @@ export default function InsightPanel({
         </div>
       ) : (
         <div className="empty-insight">
-          <FiStar />
-          <h3>Ready when you are</h3>
-          <p>Save this dream first, then ask for one thoughtful reflection. We’ll reuse it unless your entry changes.</p>
+          {loading ? <FiLoader className={getStyle(styles, "loadingWheel")} /> : <FiStar />}
+          <h3>{loading ? "Reflecting on your dream…" : "Ready when you are"}</h3>
+          <p aria-live="polite">
+            {loading
+              ? "Looking gently at its feelings, themes, and connections. This may take a moment."
+              : "Get a thoughtful reflection on this dream"}
+          </p>
           {error && <p className="form-error">{error}</p>}
-          <button className="primary-button" disabled={loading} onClick={async () => {
+          <button
+            className={`primary-button ${loading ? getStyle(styles, "loadingButton") : ""}`}
+            disabled={loading}
+            aria-busy={loading}
+            onClick={async () => {
             setLoading(true);
             setError("");
             try {
@@ -74,7 +82,10 @@ export default function InsightPanel({
             } finally {
               setLoading(false);
             }
-          }}>{loading ? "Reflecting…" : "Generate insight"}</button>
+          }}>
+            {loading && <FiLoader className={getStyle(styles, "buttonSpinner")} />}
+            {loading ? "Creating reflection…" : "Generate insight"}
+          </button>
         </div>
       )}
     </div>
@@ -99,4 +110,7 @@ const styles = {
     "rounded-full", "bg-[#faeee7]", "px-2.5", "py-1.5", "text-[10px]",
     "capitalize", "text-[#76616d]",
   ],
+  loadingWheel: ["animate-spin"],
+  loadingButton: ["!cursor-wait", "!opacity-100"],
+  buttonSpinner: ["h-4", "w-4", "animate-spin"],
 };

@@ -59,7 +59,6 @@ SCHEMA = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "title": {"type": "string", "maxLength": 80},
         "insight": {
             "type": "object",
             "additionalProperties": False,
@@ -135,7 +134,7 @@ SCHEMA = {
             "required": ["themes", "motifs", "mood", "episodeSummary", "anchors"],
         },
     },
-    "required": ["title", "insight", "memory"],
+    "required": ["insight", "memory"],
 }
 
 

@@ -63,9 +63,11 @@ flask-server/
     services/
       insight_service.py     Retrieve → reflect → persist orchestration
       memory.py              Theme taxonomy and episode-memory lifecycle
+      title_service.py       Daily title budget and persistence-safe fallback
     dreams/repository.py     Firestore dream persistence
     insights/
       ai.py                  OpenAI structured generation and embeddings
+      titles.py              Cost-bounded title generation and local fallback
       prompts.py             Reflection prompt and response schema
   scripts/
     set_unlimited_insights.py  Manage the private unlimited tier
@@ -73,6 +75,7 @@ flask-server/
   tests/
     test_access.py           Pure access-claim and identifier tests
     test_encryption.py       Ciphertext, scope binding, and blind-index tests
+    test_titles.py           Title bounds, fallback, and API request contract
 ```
 
 The app factory keeps imports testable and avoids configuring Flask, Firebase,
