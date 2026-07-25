@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "preprod": "recall-preprod"
+  },
+  "targets": {},
+  "etags": {}
+}

@@ -23,6 +23,7 @@ test("renders the Recall sign-in experience", async () => {
   render(<App />);
 
   expect(await screen.findByText("Recall")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /continue with google/i })).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent(/missing firebase configuration/i);
   expect(screen.getByText(/your dreams belong to you/i)).toBeInTheDocument();
 });

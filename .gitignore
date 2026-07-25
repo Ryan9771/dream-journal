@@ -1,3 +1,9 @@
 docker-compose.yml
 .DS_Store
 __pycache__/
+.env
+.env.local
+.pytest_cache/
+*.py[cod]
+client/build/
+flask-server/venv/

@@ -1,0 +1,15 @@
+{
+  "python.defaultInterpreterPath": "${env:HOME}/.pyenv/versions/recall-preprod/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/flask-server"
+  ],
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "tests"
+  ],
+  "python.testing.cwd": "${workspaceFolder}/flask-server",
+  "python.testing.unittestEnabled": true,
+  "python.testing.pytestEnabled": false
+}

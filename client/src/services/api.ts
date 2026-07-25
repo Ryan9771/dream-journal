@@ -12,9 +12,26 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers,
     },
   });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "Something went wrong.");
-  return payload;
+  const responseText = await response.text();
+  let payload: Record<string, unknown> = {};
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText) as Record<string, unknown>;
+    } catch {
+      if (!response.ok) {
+        throw new Error(`Recall API returned ${response.status}. Check the Flask terminal for details.`);
+      }
+      throw new Error("Recall API returned an unreadable response.");
+    }
+  }
+  if (!response.ok) {
+    throw new Error(
+      typeof payload.error === "string"
+        ? payload.error
+        : `Recall API request failed (${response.status}).`,
+    );
+  }
+  return payload as T;
 }
 
 export const dreamApi = {

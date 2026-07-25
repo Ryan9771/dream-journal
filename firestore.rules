@@ -6,5 +6,10 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if false;
     }
+
+    // Server-managed access tiers are never readable or writable by clients.
+    match /insightAccess/{document=**} {
+      allow read, write: if false;
+    }
   }
 }
